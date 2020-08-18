@@ -4,31 +4,25 @@ defmodule GlobalId do
   The discussion about this solution is in the README.md file in the project root.
   """
 
+  use Agent
+
+  @doc """
+  Keeps the final part of the global ID in a process's state. It never returns.
+  """
+  def start_link(initial_value) do
+    Agent.start_link(fn -> initial_value end)
+  end
+
   @doc """
   Returns a 64-bit non-negative integer. This function receives a process ID. The process is responsible for
   maintaining a state integer.
   """
   @spec get_id(pid()) :: non_neg_integer()
   def get_id(process_id) do
-    send(process_id, self())
+    Agent.update(process_id, &advance_state/1)
+    current_value = Agent.get(process_id, fn current_value -> current_value end)
 
-    receive do
-      current_number -> unique_id(current_number)
-    end
-  end
-
-  @doc """
-  Keeps the final part of the global ID in a process's state. It never returns.
-  """
-  @spec loop(non_neg_integer()) :: no_return()
-  def loop(current_number) do
-    next_number = advance_state(current_number)
-
-    receive do
-      caller -> send(caller, next_number)
-    end
-
-    loop(next_number)
+    unique_id(current_value)
   end
 
   @doc """
@@ -47,11 +41,11 @@ defmodule GlobalId do
   def timestamp, do: DateTime.to_unix(DateTime.utc_now())
 
   @spec advance_state(non_neg_integer()) :: non_neg_integer()
-  defp advance_state(current_number) when current_number < 999_999, do: current_number + 1
+  defp advance_state(current_value) when current_value < 999_999, do: current_value + 1
   defp advance_state(_), do: 0
 
   @spec unique_id(integer()) :: non_neg_integer()
-  defp unique_id(current_number) do
-    node_id() * 10_000_000_000_000_000 + timestamp() * 1_000_000 + current_number
+  defp unique_id(current_value) do
+    node_id() * 10_000_000_000_000_000 + timestamp() * 1_000_000 + current_value
   end
 end
