@@ -77,6 +77,10 @@ In addition, there are three property-based tests to verify that we meet the thr
 
 You can learn more about how I approach stateless property-based testing in my ElixirConf 2018 talk [here](https://youtu.be/OVLTHGaTi7k).
 
+You can run the unit test and the property-based tests with `mix test`.
+
+I implemented this code with an `Agent`, as well. The performance was not as good, but it still satisfied the throughput requirement. You can see that code on the `agent` branch in the Git repo. I used the Agent in a way that was local to a node, rather than in a distributed way.
+
 ## Resilience
 
 Here are some ways things could go wrong.
